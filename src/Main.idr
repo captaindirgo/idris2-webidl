@@ -59,7 +59,7 @@ toProg = toProgWith show
 
 runProg : Prog () -> IO ()
 runProg (MkEitherT p) = do Right _ <- p
-                             | Left e => putStrLn ("Error: " ++ e)
+                             | Left e => putStrLn ("Errorxxx: " ++ e)
                            pure ()
 
 fromCodegen : CodegenV a -> Prog a
@@ -92,7 +92,8 @@ loadDef f = let mn = moduleName
                    . last
                    $ split ('/' ==) f
 
-             in do s <- toProg (readFile f)
+             in do putStrLn("f is \{f}")
+                   s <- toProg (readFile f)
                    d <- toProg (pure $ parseIdl partsAndDefs s)
                    pure (mn,d)
 
@@ -119,16 +120,26 @@ logAttributes = traverse_ (putStrLn . extAttribute) . attributes
 --------------------------------------------------------------------------------
 
 run : List String -> Prog ()
-run args = do config <- toProg (pure $ applyArgs args)
-              ds     <- toDomains <$> traverse loadDef config.files
+run args = do 
 
+              putStrLn("foo0")
+              config <- toProg (pure $ applyArgs args)
+              putStrLn("foo-")
+              ds     <- toDomains <$> traverse loadDef config.files
+              putStrLn("foo")
               let e = env config.maxInheritance ds
+              putStrLn("foo2")
 
               doms   <- fromCodegen (traverse (domain e) ds)
+              putStrLn("foo3")
 
 --              logAttributes ds
               traverse_ (codegen config) doms
-              typesGen config doms
+              putStrLn("foo4")
+              --co: tim, this creates a 'Types' file that had hardcoded imports 
+              --    in it previously. Without these, it couldn't import the real
+              --    idl types and would fail to compile
+              --typesGen config doms
 
 main : IO ()
 main = do (pn :: args) <- getArgs
